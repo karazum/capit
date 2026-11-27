@@ -1,0 +1,63 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# The headless GNOME harness in Ubuntu containers: Wayland on 24.04 (GNOME 46) and 26.04 (GNOME 50), and X11 on
+# 24.04, as 26.04's GNOME has no X11 session. Each probe mode is its own step, and every step runs even after one
+# fails, so a run reports each mode.
+name: Integration
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: integration-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  harness:
+    name: GNOME on ${{ matrix.release }}, ${{ matrix.session }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - release: '24.04'
+            session: wayland
+          - release: '26.04'
+            session: wayland
+          - release: '24.04'
+            session: x11
+    env:
+      CAPIT_SESSION: ${{ matrix.session }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Build the harness image
+        id: image
+        run: >-
+          docker build --build-arg RELEASE=${{ matrix.release }} -t capit-harness:${{ matrix.release }}
+          -f tests/gnome-integration/container/Containerfile tests/gnome-integration/container
+      - name: Capture suite
+        if: ${{ !cancelled() && steps.image.outcome == 'success' }}
+        run: bash tests/gnome-integration/container.sh ${{ matrix.release }}
+      # GNOME's screencast service in a container on a hosted runner sometimes fails to start a recording, most
+      # often GNOME 50's, so a failed run gets one more try, and a warning says that it needed it. A real
+      # regression fails both.
+      - name: Recording
+        if: ${{ !cancelled() && steps.image.outcome == 'success' }}
+        run: |
+          if ! bash tests/gnome-integration/container.sh ${{ matrix.release }} --recording; then
+            echo "::warning::Recording failed on ${{ matrix.release }} ${{ matrix.session }}; trying once more"
+            bash tests/gnome-integration/container.sh ${{ matrix.release }} --recording
+          fi
+      - name: Preferences
+        if: ${{ !cancelled() && steps.image.outcome == 'success' && matrix.session == 'wayland' }}
+        run: bash tests/gnome-integration/container.sh ${{ matrix.release }} --prefs
+      - name: Reload
+        if: ${{ !cancelled() && steps.image.outcome == 'success' && matrix.session == 'wayland' }}
+        run: bash tests/gnome-integration/container.sh ${{ matrix.release }} --reload
+      - name: X11 at 200%
+        if: ${{ !cancelled() && steps.image.outcome == 'success' && matrix.session == 'x11' }}
+        run: bash tests/gnome-integration/container.sh ${{ matrix.release }} --x11-scale

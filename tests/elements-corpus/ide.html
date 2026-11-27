@@ -1,0 +1,140 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<html lang="en">
+<meta charset="utf-8">
+<title>Corpus IDE</title>
+<!-- A dark editor layout with fixed pixel sizes. Each element with an aria-label is a panel the
+     detector should find; the corpus reads their rectangles back over AT-SPI by that label. -->
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #1e1e1e; color: #cccccc;
+    font: 13px/22px "Ubuntu", "Cantarell", sans-serif; }
+  body { display: grid; grid-template: 30px 1fr 22px / 48px 260px 1fr; }
+  .title { grid-column: 1 / 4; background: #181818; border-bottom: 1px solid #2b2b2b; padding: 4px 12px; }
+  .activity { background: #181818; border-right: 1px solid #2b2b2b; padding-top: 8px; }
+  .activity i { display: block; width: 24px; height: 24px; margin: 12px; border: 2px solid #858585; border-radius: 4px; }
+  .sidebar { background: #1f1f1f; border-right: 1px solid #2b2b2b; overflow: hidden; }
+  .sidebar h2 { font: 11px/35px sans-serif; margin: 0; padding: 0 20px; letter-spacing: 1px; color: #bbbbbb; }
+  .sidebar div { padding: 0 20px; white-space: nowrap; }
+  .sidebar div.child { padding-left: 36px; }
+  .sidebar div.selected { background: #37373d; color: #ffffff; }
+  .main { display: grid; grid-template: 35px 22px 1fr 200px / 1fr 360px; min-width: 0; min-height: 0; }
+  .tabs { grid-column: 1 / 3; background: #181818; border-bottom: 1px solid #2b2b2b; display: flex; }
+  .tabs span { padding: 6px 16px; border-right: 1px solid #2b2b2b; }
+  .tabs span.active { background: #1e1e1e; color: #ffffff; border-top: 1px solid #0078d4; }
+  .crumbs { grid-column: 1 / 3; padding: 0 16px; color: #9d9d9d; font-size: 12px; }
+  .editor { position: relative; font: 14px/19px "Ubuntu Mono", monospace; overflow: hidden; white-space: pre; min-width: 0; }
+  .editor .line { padding-left: 64px; position: relative; height: 19px; }
+  .editor .line::before { content: attr(data-n); position: absolute; left: 0; width: 44px; text-align: right; color: #6e7681; }
+  .editor .current { background: #282828; outline: 1px solid #2f2f2f; outline-offset: -1px; }
+  .editor .current::before { color: #cccccc; }
+  .editor mark { background: #264f78; color: inherit; }
+  .editor .k { color: #569cd6; } .editor .s { color: #ce9178; } .editor .c { color: #6a9955; } .editor .f { color: #dcdcaa; }
+  .editor .scroll { position: absolute; right: 0; top: 0; bottom: 0; width: 14px; border-left: 1px solid #2b2b2b; }
+  .editor .scroll b { position: absolute; top: 40px; left: 0; right: 0; height: 120px; background: #4f4f4f; opacity: .6; }
+  .preview { border-left: 1px solid #2b2b2b; padding: 16px 20px; overflow: hidden; }
+  .preview h1 { font-size: 20px; margin: 0 0 8px; }
+  .preview canvas { display: block; margin: 12px 0; border-radius: 4px; }
+  .preview .card { background: #252526; border: 1px solid #3c3c3c; border-radius: 6px; padding: 8px 12px; margin-top: 12px; }
+  .terminal { grid-column: 1 / 3; border-top: 1px solid #2b2b2b; background: #181818; font: 13px/18px "Ubuntu Mono", monospace; overflow: hidden; }
+  .terminal header { font: 11px/34px sans-serif; padding: 0 20px; letter-spacing: 1px; }
+  .terminal header u { color: #ffffff; text-decoration: none; border-bottom: 1px solid #0078d4; padding-bottom: 6px; margin-right: 20px; }
+  .terminal pre { margin: 0; padding: 0 20px; }
+  .status { grid-column: 1 / 4; background: #181818; border-top: 1px solid #2b2b2b; font-size: 12px; padding: 0 10px; }
+  .status em { float: left; margin-left: -10px; margin-right: 10px; padding: 0 10px; background: #0078d4; color: #fff; font-style: normal; }
+  .status span { float: right; margin-left: 20px; }
+</style>
+<div class="title" role="banner" aria-label="title bar">File &nbsp; Edit &nbsp; Selection &nbsp; View &nbsp; Go &nbsp; Run &nbsp; Terminal &nbsp; Help</div>
+<div class="activity" role="navigation" aria-label="activity bar"><i></i><i></i><i></i><i></i><i></i></div>
+<div class="sidebar" role="complementary" aria-label="sidebar">
+  <h2>EXPLORER</h2>
+  <div>▾ capit</div>
+  <div class="child">▸ docs</div>
+  <div class="child">▾ extension</div>
+  <div class="child">&nbsp;&nbsp;&nbsp;accessibility.py</div>
+  <div class="child selected">&nbsp;&nbsp;&nbsp;elements.py</div>
+  <div class="child">&nbsp;&nbsp;&nbsp;extension.js</div>
+  <div class="child">&nbsp;&nbsp;&nbsp;model.js</div>
+  <div class="child">&nbsp;&nbsp;&nbsp;prefs.js</div>
+  <div class="child">&nbsp;&nbsp;&nbsp;renderer.py</div>
+  <div class="child">&nbsp;&nbsp;&nbsp;stylesheet.css</div>
+  <div class="child">▸ scripts</div>
+  <div class="child">▸ tests</div>
+  <div class="child">&nbsp;Makefile</div>
+  <div class="child">&nbsp;README.md</div>
+</div>
+<div class="main">
+  <div class="tabs" role="tablist" aria-label="tab strip"><span class="active">elements.py</span><span>capit.js</span><span>README.md</span><span>Preview README.md</span></div>
+  <div class="crumbs" role="group" aria-label="breadcrumbs">extension › elements.py › Detector › run</div>
+  <div class="editor" role="region" aria-label="editor"><div class="scroll"><b></b></div></div>
+  <div class="preview" role="region" aria-label="preview">
+    <h1>CapIt</h1>
+    Select and annotate on a frozen desktop.
+    <canvas width="300" height="160"></canvas>
+    <div class="card" role="group" aria-label="card">Smart boxes outline the panel under the pointer. Scroll to widen.</div>
+  </div>
+  <div class="terminal" role="region" aria-label="terminal"><header><u>TERMINAL</u> PROBLEMS &nbsp; OUTPUT &nbsp; DEBUG CONSOLE</header>
+<pre>$ make test
+node --test tests/model.test.js
+# pass 14
+# fail 0
+/usr/bin/python3 -m unittest discover -s tests -p 'test_*.py' -v
+Ran 31 tests in 2.412s
+OK
+$ <span style="background:#ccc">&nbsp;</span></pre></div>
+</div>
+<div class="status" role="contentinfo" aria-label="status bar"><em>⎇ main</em> 0 ⚠ 0 ✕<span>UTF-8</span><span>Python 3.12</span><span>Ln 14, Col 9</span></div>
+<script>
+  const source = `<span class="k">class</span> <span class="f">Detector</span>:
+    <span class="k">def</span> <span class="f">__init__</span>(self, values, scale):
+        ramp = max(2, math.ceil(scale * 2))
+        self.longest = 3 * ramp + 4
+        self.gap = ramp + 1
+        self.minimum = max(4, round(MIN_ELEMENT * scale))
+        self.band = round(MIN_BAND * scale)
+        self.rows = edge_counts(values, ramp)
+        self.columns = edge_counts(numpy.ascontiguousarray(values.T), ramp)
+        self.found = []
+
+    <span class="k">def</span> <span class="f">run</span>(self):
+        <span class="s">"""Nested panel rectangles in image pixels."""</span>
+        height, width = <mark>self.rows.shape[0] + 1</mark>, self.columns.shape[0] + 1
+        self._split((0, 0, width, height), 0)
+        <span class="k">return</span> self.found
+
+    <span class="k">def</span> <span class="f">_segment</span>(self, region, horizontal):
+        x0, y0, x1, y1 = region
+        <span class="k">if</span> horizontal:
+            <span class="c"># A soft border is an edge on both of its sides with a calmer middle.</span>
+            positions, strength = cuts(self.rows, y0, y1, x0, x1, self.longest, self.gap)
+            <span class="k">return</span> [(x0, low, x1, high) <span class="k">for</span> low, high <span class="k">in</span> pieces(positions)], strength
+        positions, strength = cuts(self.columns, x0, x1, y0, y1, self.longest, self.gap)
+        <span class="k">return</span> [(low, y0, high, y1) <span class="k">for</span> low, high <span class="k">in</span> pieces(positions)], strength
+`.split('\n');
+  const editor = document.querySelector('.editor');
+  for (let pass = 0; pass < 3; pass++) {
+    source.forEach((text, index) => {
+      const line = document.createElement('div');
+      const number = pass * source.length + index + 1;
+      line.className = number === 14 ? 'line current' : 'line';
+      line.dataset.n = number;
+      line.innerHTML = text || ' ';
+      editor.append(line);
+    });
+  }
+  // A photo-like image: smooth colour with noise, which must not shatter into boxes.
+  const canvas = document.querySelector('canvas');
+  const context = canvas.getContext('2d');
+  let seed = 7;
+  const random = () => (seed = seed * 16807 % 2147483647) / 2147483647;
+  for (let y = 0; y < 160; y += 2) {
+    for (let x = 0; x < 300; x += 2) {
+      const sky = y < 90 - 20 * Math.sin(x / 40);
+      const shade = random() * 50;
+      context.fillStyle = sky ? `rgb(${60 + shade},${120 + shade + y / 2},${200 + shade / 2})`
+        : `rgb(${40 + shade + x / 6},${110 + shade},${50 + shade / 2})`;
+      context.fillRect(x, y, 2, 2);
+    }
+  }
+</script>
+</html>

@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+# Builds the source package and the .deb for each Ubuntu release given, in a bare ubuntu:RELEASE container with only
+# the package's build dependencies, and checks them with that release's lintian:
+#   scripts/build-deb [RELEASE...]        (default: 24.04 26.04)
+# The upstream tarball is the committed tree at HEAD without debian/. debian/ itself comes from the working tree, so
+# packaging changes can be tried before they are committed. Results land in dist/deb/, one folder per release, each
+# a complete source upload beside its .deb.
+# DEB_BUILD_OPTIONS=nocheck DEB_BUILD_PROFILES=nocheck skips the tests.
+set -euo pipefail
+repo=$(cd -- "$(dirname -- "$0")/.." && pwd)
+if [ $# -eq 0 ]; then
+  set -- 24.04 26.04
+fi
+package=$(sed -n '1s/ .*//p' "$repo/debian/changelog")
+version=$(sed -n '1s/^[^(]*(\([^)]*\)).*/\1/p' "$repo/debian/changelog")
+upstream=${version%-*}
+out=$repo/dist/deb
+mkdir -p "$out"
+
+# Every release reuses one tarball: Launchpad refuses an upload whose orig tarball differs from one already in the PPA.
+# Archiving the tree rather than the commit leaves the commit ID out, and the time is that of the last change outside
+# debian/, so commits that change only the packaging give the same bytes.
+orig=${package}_${upstream}.orig.tar.gz
+changed=$(git -C "$repo" log -1 --format=%ct HEAD -- . ':(exclude)debian')
+git -C "$repo" archive --format=tar.gz --prefix="$package-$upstream/" --mtime="@$changed" --output="$out/$orig" \
+  'HEAD^{tree}' -- . ':(exclude)debian'
+
+for release in "$@"; do
+  image=capit-deb:$release
+  # Only debian/control goes into the image, so the image is rebuilt when the build dependencies change.
+  docker build --quiet --build-arg RELEASE="$release" -t "$image" -f - "$repo/debian" >/dev/null <<'CONTAINERFILE'
+ARG RELEASE
+FROM ubuntu:${RELEASE}
+ENV DEBIAN_FRONTEND=noninteractive
+COPY control /tmp/deps/debian/control
+RUN apt-get update && apt-get install -y --no-install-recommends build-essential lintian \
+    && apt-get build-dep -y /tmp/deps && rm -rf /var/lib/apt/lists/* /tmp/deps
+CONTAINERFILE
+  rm -rf "${out:?}/$release"
+  mkdir -p "$out/$release"
+  # Without a network the build can only use what the build dependencies installed. The changelog's top entry gets
+  # the release's version suffix and code name. A ~ suffix sorts below the bare version, so 0.9.0-1~24.04 comes
+  # before 0.9.0-1~26.04, and both before an official 0.9.0-1.
+  # HOME does not exist, as on Launchpad's builders, so nothing in the build may write there.
+  docker run --rm --network none --user "$(id -u):$(id -g)" -e HOME=/nonexistent -e DEB_BUILD_OPTIONS -e DEB_BUILD_PROFILES \
+    -v "$out:/out" -v "$repo/debian:/debian:ro" "$image" bash -euc '
+      release=$1 package=$2 version=$3 upstream=$4 orig=$5
+      codename=$(. /etc/os-release && echo "$VERSION_CODENAME")
+      mkdir /tmp/build && cd /tmp/build
+      cp "/out/$orig" .
+      tar -xf "$orig"
+      cd "$package-$upstream"
+      cp -r /debian debian
+      sed -i "1s/($version) [^;]*;/($version~$release) $codename;/" debian/changelog
+      test "$(dpkg-parsechangelog -S Version) $(dpkg-parsechangelog -S Distribution)" = "$version~$release $codename"
+      # A PPA takes source uploads only, so the source is built on its own, with a .changes and .buildinfo of its
+      # own; -sa includes the orig tarball.
+      dpkg-buildpackage --build=source -sa -us -uc
+      dpkg-buildpackage --build=binary -us -uc
+      cd ..
+      lintian --info --display-info --fail-on error,warning ./*.changes
+      cp ./*.deb ./*.dsc ./*.debian.tar.* ./*.changes ./*.buildinfo "$orig" "/out/$release/"
+    ' build "$release" "$package" "$version" "$upstream" "$orig"
+  echo "Built $(cd "$out/$release" && ls ./*.deb)"
+done

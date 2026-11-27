@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+name: Checks
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          package-manager-cache: false
+      - name: Install GJS and the typelibs the workers and doctor.js import
+        run: sudo apt-get update && sudo apt-get install -y gjs gir1.2-gdkpixbuf-2.0 gir1.2-gstreamer-1.0 libglib2.0-bin ffmpeg
+      - run: npm ci
+      - run: make check lint test

@@ -1,0 +1,38 @@
+Source: gnome-shell-extension-capit
+Section: gnome
+Priority: optional
+Maintainer: Karlo <karlo.razumovic@gmail.com>
+Build-Depends: debhelper-compat (= 13),
+               gnome-shell-common,
+               libglib2.0-bin,
+               gir1.2-gdkpixbuf-2.0 <!nocheck>,
+               gir1.2-gstreamer-1.0 <!nocheck>,
+               gjs <!nocheck>,
+               nodejs <!nocheck>,
+Standards-Version: 4.6.2
+Homepage: https://github.com/karazum/capit
+Vcs-Browser: https://github.com/karazum/capit
+Vcs-Git: https://github.com/karazum/capit.git
+Rules-Requires-Root: no
+
+Package: gnome-shell-extension-capit
+Architecture: all
+Depends: ${misc:Depends},
+         ${gnome-shell:Depends},
+         gjs,
+         libglib2.0-bin,
+Recommends: ffmpeg,
+            gstreamer1.0-pipewire,
+            gstreamer1.0-plugins-base,
+            gstreamer1.0-plugins-good,
+            gstreamer1.0-plugins-ugly,
+Description: GNOME Shell extension for screenshots, annotation and recording
+ CapIt freezes the screen and lets you pick a region, a whole window or a
+ panel inside it, then annotate it with arrows, shapes, text, blur and
+ redaction before copying it to the clipboard, saving it to a folder, or both.
+ It also records a region of the screen as a GIF or an MP4 video.
+ .
+ It runs on GNOME Shell on Wayland and on Xorg. The capit command opens a
+ capture, so it can be bound to a keyboard shortcut.
+ .
+ Recording needs FFmpeg and the GStreamer plugins this package recommends.

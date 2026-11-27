@@ -1,0 +1,15 @@
+#!/bin/sh
+set -e
+
+# A system-wide extension starts disabled, and GNOME on Wayland may not notice it until the next login, so a first
+# install says what to do next.
+if [ "$1" = configure ] && [ -z "$2" ]; then
+    cat <<'MESSAGE'
+CapIt is installed for every user but turned on for none. To use it, log out
+and back in, then turn it on in the Extensions app or with:
+  gnome-extensions enable capit@karazum.github.io
+`capit doctor` shows whether it is running and what recording still needs.
+MESSAGE
+fi
+
+#DEBHELPER#

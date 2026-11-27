@@ -1,0 +1,58 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-3.0-or-later
+set -eu
+case "${1:-capture}" in
+    capture)
+        gdbus call --session --dest org.gnome.Shell --object-path /io/github/karazum/CapIt --method io.github.karazum.CapIt.Capture
+        ;;
+    status)
+        gdbus call --session --dest org.gnome.Shell --object-path /io/github/karazum/CapIt --method io.github.karazum.CapIt.GetStatus
+        ;;
+    preferences)
+        gnome-extensions prefs capit@karazum.github.io
+        ;;
+    doctor)
+        # What to paste into a bug report: GNOME, the session, the extension, and each dependency.
+        uuid=capit@karazum.github.io
+        echo "GNOME Shell: $(gnome-shell --version 2>/dev/null || echo 'not found')"
+        echo "Session: ${XDG_SESSION_TYPE:-unknown} (${XDG_CURRENT_DESKTOP:-unknown desktop})"
+        info=$(gnome-extensions info "$uuid" 2>/dev/null || true)
+        path=$(printf '%s\n' "$info" | sed -n 's/^ *Path: //p')
+        if [ -n "$path" ]; then
+            echo "CapIt: $(printf '%s\n' "$info" | sed -n 's/^ *State: //p'), $path"
+        else
+            # Without a running GNOME Shell that knows the extension, as before the first login after installing it,
+            # the copy it would load still reports the dependencies: the user's, then the system-wide one, then, from
+            # a source checkout, the extension beside this script.
+            path=
+            for candidate in "${XDG_DATA_HOME:-$HOME/.local/share}/gnome-shell/extensions/$uuid" \
+                "/usr/share/gnome-shell/extensions/$uuid" "$(dirname "$0")/../extension"; do
+                if [ -f "$candidate/doctor.js" ]; then
+                    path=$candidate
+                    break
+                fi
+            done
+            if [ -n "$path" ]; then
+                echo "CapIt: not known to a running GNOME Shell, found in $path"
+            else
+                echo 'CapIt: not installed'
+            fi
+        fi
+        if command -v ffmpeg >/dev/null; then
+            echo "FFmpeg: $(ffmpeg -hide_banner -version | head -n 1)"
+        fi
+        if [ -f "$path/doctor.js" ] && command -v gjs >/dev/null; then
+            gjs -m "$path/doctor.js"
+        else
+            echo 'Dependencies: not checked, gjs or doctor.js is missing'
+        fi
+        ;;
+    timings)
+        # The stage timings of this boot, logged while the timing-log setting is on.
+        journalctl --user -b -o cat -g 'CapIt timing'
+        ;;
+    *)
+        echo 'Usage: capit [capture|status|preferences|timings|doctor]' >&2
+        exit 2
+        ;;
+esac

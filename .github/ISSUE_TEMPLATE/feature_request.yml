@@ -1,0 +1,22 @@
+name: Feature request
+description: Propose a capture, annotation or sharing workflow
+body:
+  - type: textarea
+    id: workflow
+    attributes:
+      label: What are you trying to do?
+      description: The task, and the steps it takes today, with CapIt or another tool.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What should CapIt do?
+      description: The result you want. Mention the desktop it matters on, such as Xorg, several monitors or scaling.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives
+      description: Other ways you've considered, or tools that already do this.

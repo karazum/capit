@@ -1,0 +1,41 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+.capit-mask { background-color: rgba(5, 10, 20, 0.55); }
+.capit-toolbar { background-color: rgba(24, 24, 24, 0.97); border: 1px solid rgba(255, 255, 255, 0.1); border-top-width: 0; border-radius: 0 0 9px 9px; padding: 3px 9px 5px; spacing: 2px; color: #f2f5fb; }
+.capit-row { spacing: 3px; }
+.capit-toolbar.capit-floating { border-top-width: 1px; border-radius: 9px; padding-top: 5px; }
+.capit-handle { padding: 5px 2px; border-radius: 6px; }
+.capit-handle:hover { background-color: rgba(255, 255, 255, 0.1); }
+.capit-button { padding: 5px 6px; border-radius: 6px; background-color: transparent; color: #f3f5fa; }
+.capit-button:hover { background-color: #496584; }
+.capit-button:checked { background-color: #356da4; }
+.capit-primary { background-color: #356da4; }
+.capit-status { font-size: 10pt; color: #d6e1f0; max-width: 851px; }
+.capit-entry { background-color: #152132; color: #ffffff; border: 2px solid #75bbff; border-radius: 5px; padding: 6px; font-size: 18pt; width: 330px; }
+.capit-folder-entry { background-color: #152132; color: #ffffff; border: 1px solid #75bbff; padding: 6px; font-size: 12pt; }
+.capit-region-tab { color: #101010; font-size: 12pt; font-weight: bold; padding: 4px 11px; border-radius: 6px; border: 1px solid rgba(0, 0, 0, 0.35); }
+.capit-region-tab:hover { border-color: #ffffff; }
+.capit-hint { background-color: rgba(20, 28, 40, 0.95); color: #ffffff; border-radius: 8px; padding: 10px 16px; font-size: 12pt; }
+.capit-progress { spacing: 6px; padding-top: 8px; }
+.capit-progress-label { font-size: 10pt; color: #d6e1f0; }
+.capit-progress-track { height: 4px; border-radius: 2px; background-color: rgba(255, 255, 255, 0.15); }
+.capit-progress-fill { height: 4px; border-radius: 2px; background-color: #75bbff; }
+.capit-separator { width: 1px; background-color: rgba(255, 255, 255, 0.14); margin: 5px 5px; }
+.capit-swatch { width: 20px; height: 20px; border-radius: 10px; border: 2px solid rgba(255, 255, 255, 0.25); margin: 0 1px; }
+.capit-swatch:hover { border-color: rgba(255, 255, 255, 0.7); }
+.capit-swatch:checked { border-color: #ffffff; }
+.capit-width { width: 29px; height: 29px; border-radius: 6px; }
+.capit-width:hover { background-color: #496584; }
+.capit-width:checked { background-color: #356da4; }
+.capit-width-dot { background-color: #f3f5fa; }
+.capit-recording-frame { background-color: rgba(255, 64, 64, 0.9); }
+.capit-recording .system-status-icon { color: #ff4d4d; }
+.capit-recording-label { font-feature-settings: "tnum"; margin-left: 4px; }
+.capit-modes { background-color: rgba(24, 24, 24, 0.97); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 4px; spacing: 3px; }
+.capit-modes .capit-button { padding: 6px; border-radius: 8px; }
+.capit-demo-halo { border-radius: 999px; background-color: rgba(255, 214, 0, 0.2); border: 2px solid rgba(255, 214, 0, 0.5); }
+.capit-demo-halo.pressed { background-color: rgba(255, 140, 0, 0.45); border-color: rgba(255, 140, 0, 0.9); }
+.capit-demo-ripple { border-radius: 999px; border: 4px solid rgba(255, 140, 0, 0.95); }
+.capit-demo-ripple.secondary { border-color: rgba(30, 144, 255, 0.95); }
+.capit-recording-bar { spacing: 6px; padding: 5px 9px; }
+.capit-recording-time { font-feature-settings: "tnum"; color: #f2f5fb; font-size: 12pt; min-width: 40px; }
+.capit-key-hint { font-size: 7pt; font-weight: bold; color: #ffffff; background-color: rgba(10, 14, 22, 0.85); border: 1px solid rgba(255, 255, 255, 0.35); border-radius: 3px; padding: 0 2px; }

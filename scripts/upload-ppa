@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+# Signs the source upload in each folder that scripts/build-deb wrote and uploads it to a Launchpad PPA:
+#   PPA_SIGNING_KEY="$(cat key.asc)" scripts/upload-ppa [--simulate] ppa:OWNER/NAME dist/deb/24.04 dist/deb/26.04
+# PPA_SIGNING_KEY is an ASCII-armoured secret key, normally a signing subkey exported with
+# `gpg --armor --export-secret-subkeys KEYID!`. PPA_SIGNING_PASSPHRASE is its passphrase, if it has one.
+# The key lives only in a temporary GnuPG home, deleted on exit. --simulate signs and checks everything, but
+# uploads nothing.
+set -euo pipefail
+simulate=
+if [ "${1:-}" = --simulate ]; then
+  simulate=--simulate
+  shift
+fi
+ppa=${1:?usage: upload-ppa [--simulate] ppa:OWNER/NAME FOLDER...}
+shift
+[ $# -gt 0 ] || { echo 'upload-ppa: no folders given' >&2; exit 2; }
+: "${PPA_SIGNING_KEY:?PPA_SIGNING_KEY is not set}"
+
+GNUPGHOME=$(mktemp -d)
+export GNUPGHOME
+trap 'gpgconf --kill all 2>/dev/null || true; rm -rf -- "$GNUPGHOME"' EXIT
+printf '%s\n' "$PPA_SIGNING_KEY" | gpg --batch --quiet --import
+# dput verifies each signature, and reports an imported key it has no trust for as an error.
+gpg --batch --with-colons --list-secret-keys | awk -F: '$1 == "fpr" { print $10 ":6:"; exit }' |
+  gpg --batch --quiet --import-ownertrust
+# The subkey that can sign. Its primary key's secret part is normally absent, so the subkey is named with a ! to
+# make GnuPG use exactly it.
+key=$(gpg --batch --with-colons --list-secret-keys | awk -F: '$1 == "ssb" && $12 ~ /s/ { print $5; exit }')
+key=${key:-$(gpg --batch --with-colons --list-secret-keys | awk -F: '$1 == "sec" && $12 ~ /[sS]/ { print $5; exit }')}
+[ -n "$key" ] || { echo 'upload-ppa: PPA_SIGNING_KEY holds no key that can sign' >&2; exit 1; }
+passphrase_file=$GNUPGHOME/passphrase
+printf '%s' "${PPA_SIGNING_PASSPHRASE:-}" >"$passphrase_file"
+signer="gpg --batch --pinentry-mode loopback --passphrase-file $passphrase_file"
+
+for folder in "$@"; do
+  changes=$(find "$folder" -maxdepth 1 -name '*_source.changes')
+  [ "$(printf '%s\n' "$changes" | grep -c .)" = 1 ] || { echo "upload-ppa: $folder needs exactly one source upload" >&2; exit 1; }
+  # debsign signs the .dsc and .buildinfo, then the .changes with their new checksums.
+  debsign --no-conf -p"$signer" -k"$key!" "$changes"
+  # dput checks the signatures against the key imported above, then uploads the .changes and every file it lists
+  # from that folder. Launchpad builds it for the distribution its changelog names.
+  dput $simulate "$ppa" "$changes"
+done

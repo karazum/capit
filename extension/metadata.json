@@ -1,0 +1,9 @@
+{
+  "uuid": "capit@karazum.github.io",
+  "name": "CapIt",
+  "description": "Frozen region capture, smart window selection, annotation, and GIF and video recording for GNOME. Captures are copied to the clipboard, saved to a folder, or both.\n\nGIF and video recording also needs FFmpeg. On Ubuntu: sudo apt install ffmpeg gstreamer1.0-plugins-ugly. Elsewhere, install FFmpeg from your distribution. Preferences show anything else recording is missing.",
+  "shell-version": ["45", "46", "47", "48", "49", "50"],
+  "version-name": "0.9.0",
+  "url": "https://github.com/karazum/capit",
+  "settings-schema": "org.gnome.shell.extensions.capit"
+}

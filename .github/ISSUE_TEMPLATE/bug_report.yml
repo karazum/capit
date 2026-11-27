@@ -1,0 +1,63 @@
+name: Bug report
+description: Something in CapIt doesn't work as it should
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Everything here is public. Leave private content out of screenshots and recordings, or cover it with CapIt's
+        redaction first. To report a security problem, use the private form linked from "New issue" instead.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what CapIt did instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Press Super+Shift+S.
+        2. Hover the Files sidebar.
+        3. ...
+    validations:
+      required: true
+  - type: dropdown
+    id: channel
+    attributes:
+      label: How CapIt is installed
+      options:
+        - Ubuntu PPA (.deb)
+        - extensions.gnome.org
+        - Zip from a GitHub release
+        - From a source checkout
+    validations:
+      required: true
+  - type: textarea
+    id: doctor
+    attributes:
+      label: Output of `capit doctor`
+      description: |
+        It lists your GNOME Shell version, session type, CapIt's version and state, and what recording needs. The
+        installed extension's folder in it includes your user name.
+
+        From a source checkout, run `./scripts/capit doctor`. Without the `capit` command, as after an install
+        from extensions.gnome.org or a release zip, run instead:
+        `gnome-shell --version; echo $XDG_SESSION_TYPE; gjs -m ~/.local/share/gnome-shell/extensions/capit@karazum.github.io/doctor.js`
+      render: text
+    validations:
+      required: true
+  - type: input
+    id: monitors
+    attributes:
+      label: Monitors and scaling
+      placeholder: Two monitors, a 4K laptop screen at 200% left of a 1080p one at 100%
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Log lines
+      description: Anything from `journalctl --user -b -g CapIt` around the time it happened.
+      render: text

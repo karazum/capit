@@ -1,0 +1,158 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Builds a release from a vX.Y.Z tag: the extension zip, one .deb per Ubuntu release and SHA256SUMS, with a build
+# provenance attestation. A draft GitHub Release and the PPA upload follow in the protected release environment,
+# after the owner approves. Pull requests that touch the packaging, and manual runs, build and check everything but
+# publish nothing.
+name: Release
+on:
+  push:
+    tags: ['v[0-9]+.[0-9]+.[0-9]+']
+  pull_request:
+    paths:
+      - .github/workflows/release.yml
+      - Makefile
+      - debian/**
+      - extension/metadata.json
+      - scripts/build-deb
+      - scripts/upload-ppa
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      # One version everywhere: metadata.json's version-name, the upstream part of debian/changelog's top entry,
+      # and, on a tag, the tag.
+      - name: Check the version
+        id: version
+        run: |
+          version=$(jq -r '."version-name"' extension/metadata.json)
+          debian=$(sed -n '1s/^[^(]*(\([^)]*\)).*/\1/p' debian/changelog)
+          if [ "${debian%-*}" != "$version" ]; then
+            echo "::error::debian/changelog is at ${debian%-*}, metadata.json at $version"
+            exit 1
+          fi
+          if [ "$GITHUB_REF_TYPE" = tag ] && [ "${GITHUB_REF_NAME#v}" != "$version" ]; then
+            echo "::error::The tag $GITHUB_REF_NAME does not match version $version"
+            exit 1
+          fi
+          echo "version=$version" >>"$GITHUB_OUTPUT"
+      # gnome-extensions pack comes with GNOME Shell.
+      - name: Build the extension zip
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends gnome-shell
+          make package
+          mkdir -p dist/release
+          mv dist/capit@karazum.github.io.shell-extension.zip \
+            "dist/release/capit-${{ steps.version.outputs.version }}.shell-extension.zip"
+      - name: Build the Debian packages
+        run: |
+          scripts/build-deb 24.04 26.04
+          cp dist/deb/*/*.deb dist/release/
+      - name: Write SHA256SUMS
+        working-directory: dist/release
+        run: |
+          sha256sum -- * >SHA256SUMS
+          cat SHA256SUMS
+      - uses: actions/upload-artifact@v7
+        with:
+          name: release
+          path: dist/release/
+          if-no-files-found: error
+      # The signed PPA uploads are made from these, one folder per Ubuntu release.
+      - uses: actions/upload-artifact@v7
+        with:
+          name: source-packages
+          path: |
+            dist/deb/*/
+            !dist/deb/*/*.deb
+          if-no-files-found: error
+
+  # GitHub's Free, Pro and Team plans offer attestations for public repositories only.
+  attest:
+    needs: build
+    if: ${{ github.event_name == 'push' && github.ref_type == 'tag' && !github.event.repository.private }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+      artifact-metadata: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: release
+          path: dist/release
+      - uses: actions/attest@v4
+        with:
+          subject-checksums: dist/release/SHA256SUMS
+
+  publish:
+    needs: [build, attest]
+    if: >-
+      ${{ !cancelled() && github.event_name == 'push' && github.ref_type == 'tag' &&
+      needs.build.result == 'success' && needs.attest.result != 'failure' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: release
+    permissions:
+      contents: write
+    env:
+      VERSION: ${{ needs.build.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v8
+        with:
+          name: release
+          path: dist/release
+      - uses: actions/download-artifact@v8
+        with:
+          name: source-packages
+          path: dist/deb
+      # The notes are the version's section of CHANGELOG.md, from its "## [X.Y.Z]" heading to the next heading or
+      # the link definitions at the end of the file.
+      - name: Create the draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          awk -v heading="## [$VERSION]" '
+            /^## \[/ { if (found) exit; found = index($0, heading) == 1; next }
+            /^\[[^]]*\]: / { if (found) exit }
+            found' CHANGELOG.md >notes.md || true
+          if ! grep -q '[^[:space:]]' notes.md; then
+            echo "::error::CHANGELOG.md has no section for $VERSION"
+            exit 1
+          fi
+          # A rerun after a failed PPA upload finds the draft already there and replaces its files.
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" dist/release/* --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" --draft --verify-tag --title "CapIt $VERSION" \
+              --notes-file notes.md dist/release/*
+          fi
+      - name: Upload to the PPA
+        env:
+          PPA: ${{ vars.PPA || 'ppa:karazum-capit/stable' }}
+          PPA_SIGNING_KEY: ${{ secrets.PPA_SIGNING_KEY }}
+          PPA_SIGNING_PASSPHRASE: ${{ secrets.PPA_SIGNING_PASSPHRASE }}
+        run: |
+          if [ -z "$PPA_SIGNING_KEY" ]; then
+            echo "::warning::PPA_SIGNING_KEY is not set in the release environment, so nothing went to $PPA"
+            exit 0
+          fi
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends devscripts dput gnupg
+          scripts/upload-ppa "$PPA" dist/deb/24.04 dist/deb/26.04

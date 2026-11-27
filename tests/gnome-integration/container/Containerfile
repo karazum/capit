@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# The headless GNOME harness on a given Ubuntu release, for example: --build-arg RELEASE=26.04
+ARG RELEASE=26.04
+FROM ubuntu:${RELEASE}
+ENV DEBIAN_FRONTEND=noninteractive
+# GNOME Shell and the GTK test client; software GL; the private session's D-Bus, PipeWire and WirePlumber; FFmpeg,
+# GStreamer and setpriv for recording; ripgrep for the runner's log checks. Releases past their end of life are
+# served from old-releases.ubuntu.com only.
+RUN { apt-get update || { \
+      sed -i -E 's#https?://(archive|security|ports)\.ubuntu\.com#http://old-releases.ubuntu.com#' \
+        /etc/apt/sources.list /etc/apt/sources.list.d/*.sources 2>/dev/null; \
+      apt-get update; }; } && apt-get install -y --no-install-recommends \
+      gnome-shell gnome-shell-extension-prefs gjs libglib2.0-bin \
+      python3 python3-gi python3-gi-cairo python3-cairo gir1.2-gtk-4.0 gir1.2-adw-1 \
+      libgl1-mesa-dri mesa-vulkan-drivers fonts-dejavu-core dbus dbus-user-session at-spi2-core \
+      pipewire wireplumber gstreamer1.0-pipewire gstreamer1.0-plugins-base gstreamer1.0-plugins-good \
+      gstreamer1.0-plugins-ugly ffmpeg util-linux ripgrep procps \
+    && rm -rf /var/lib/apt/lists/*
+# The harness's X11 session: Xorg with the dummy video driver, and cvt and xrandr to lay out its outputs.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      xserver-xorg-core xserver-xorg-video-dummy x11-xserver-utils \
+    && rm -rf /var/lib/apt/lists/*
+RUN useradd --create-home --uid 1000 tester 2>/dev/null || useradd --create-home tester
+USER tester
+ENV PYTHONDONTWRITEBYTECODE=1 LANG=C.UTF-8
+WORKDIR /src

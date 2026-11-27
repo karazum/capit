@@ -1,0 +1,185 @@
+{
+ "shapes-at-double-scale": {
+  "source": "source-white.png",
+  "origin": [
+   100,
+   50
+  ],
+  "scale": 2,
+  "annotations": [
+   {
+    "kind": "arrow",
+    "x1": 103,
+    "y1": 53,
+    "x2": 125,
+    "y2": 70,
+    "color": "#ff595e",
+    "width": 2
+   },
+   {
+    "kind": "rectangle",
+    "x1": 128,
+    "y1": 52,
+    "x2": 138,
+    "y2": 60,
+    "color": "#75bbff",
+    "width": 3
+   },
+   {
+    "kind": "ellipse",
+    "x1": 135,
+    "y1": 75,
+    "x2": 105,
+    "y2": 55,
+    "color": "#000000",
+    "width": 2
+   },
+   {
+    "kind": "ellipse",
+    "x1": 105,
+    "y1": 78,
+    "x2": 135,
+    "y2": 78,
+    "color": "#000000",
+    "width": 2
+   },
+   {
+    "kind": "brush",
+    "points": [
+     [
+      105,
+      55
+     ],
+     [
+      120,
+      70
+     ],
+     [
+      135,
+      55
+     ]
+    ],
+    "color": "#78d391",
+    "width": 2
+   },
+   {
+    "kind": "brush",
+    "points": [
+     [
+      110,
+      76
+     ]
+    ],
+    "color": "#000000",
+    "width": 4
+   },
+   {
+    "kind": "redact", "color": "#000000",
+    "x1": 110,
+    "y1": 55,
+    "x2": 120,
+    "y2": 65
+   }
+  ]
+ },
+ "fractional-redaction": {
+  "source": "source-white.png",
+  "origin": [
+   100,
+   50
+  ],
+  "scale": 1.25,
+  "annotations": [
+   {
+    "kind": "redact", "color": "#000000",
+    "x1": 101,
+    "y1": 51,
+    "x2": 105,
+    "y2": 55
+   }
+  ]
+ },
+ "blur-across-an-edge": {
+  "source": "source-half-black.png",
+  "origin": [
+   0,
+   0
+  ],
+  "scale": 1,
+  "annotations": [
+   {
+    "kind": "blur",
+    "x1": 10,
+    "y1": 10,
+    "x2": 70,
+    "y2": 50
+   }
+  ]
+ },
+ "blur-under-an-earlier-redaction": {
+  "source": "source-white.png",
+  "origin": [
+   100,
+   50
+  ],
+  "scale": 2,
+  "annotations": [
+   {
+    "kind": "redact", "color": "#000000",
+    "x1": 110,
+    "y1": 55,
+    "x2": 120,
+    "y2": 65
+   },
+   {
+    "kind": "blur",
+    "x1": 100,
+    "y1": 50,
+    "x2": 140,
+    "y2": 80
+   }
+  ]
+ },
+ "annotations-over-a-window-at-fractional-origin": {
+  "source": "source-ide-crop.png",
+  "origin": [
+   10.4,
+   20.8
+  ],
+  "scale": 1.25,
+  "annotations": [
+   {
+    "kind": "blur",
+    "x1": 40,
+    "y1": 40,
+    "x2": 200,
+    "y2": 150
+   },
+   {
+    "kind": "arrow",
+    "x1": 60.5,
+    "y1": 170.25,
+    "x2": 250,
+    "y2": 90,
+    "color": "#ffca3a",
+    "width": 4
+   },
+   {
+    "kind": "rectangle",
+    "x1": 220,
+    "y1": 30,
+    "x2": 300,
+    "y2": 210,
+    "color": "#c77dff",
+    "width": 8
+   },
+   {
+    "kind": "redact", "color": "#000000",
+    "x1": 30.3,
+    "y1": 180.6,
+    "x2": 90.9,
+    "y2": 200.1
+   }
+  ]
+ }
+}

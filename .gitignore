@@ -1,0 +1,18 @@
+# Extension zip from `make package`
+/dist/
+
+# Editor / OS files
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+__pycache__/
+*.pyc
+gschemas.compiled
+
+# Development tools from package.json
+node_modules/
+
+# Local notes kept out of the repository
+/tmp/

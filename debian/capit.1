@@ -1,0 +1,40 @@
+.TH CAPIT 1 2026-11-27 CapIt "User Commands"
+.SH NAME
+capit \- control the CapIt screenshot extension for GNOME Shell
+.SH SYNOPSIS
+.B capit
+.RB [ capture | status | preferences | timings | doctor ]
+.SH DESCRIPTION
+.B capit
+talks to the CapIt extension running in the current GNOME Shell session.
+Without a command it opens a capture, so it can be bound to a keyboard
+shortcut in GNOME's settings.
+.SH COMMANDS
+.TP
+.B capture
+Freeze the screen and open the capture overlay.
+.TP
+.B status
+Print the state of the running extension.
+.TP
+.B preferences
+Open the CapIt preferences window.
+.TP
+.B timings
+Print the stage timings logged during this boot while the
+.I Log stage timings
+setting is on.
+.TP
+.B doctor
+Print the GNOME Shell version, the session type, whether CapIt is installed
+and enabled, and each program and GStreamer element it uses, with the package
+that provides any that is missing.
+Bug reports should include this output.
+.SH NOTES
+A system-wide install is disabled until each user turns it on, in the
+Extensions app or with
+.BR "gnome-extensions enable capit@karazum.github.io" .
+On Wayland, GNOME Shell may only see a newly installed extension after the
+user logs out and back in.
+.SH SEE ALSO
+.BR gnome-extensions (1)

@@ -1,0 +1,30 @@
+#!/usr/bin/make -f
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+# Each Ubuntu series gets its own build, which claims only the GNOME release that series ships. gnome-shell-common is
+# built from the same source as gnome-shell, so its major version is the series' GNOME release, without pulling the
+# whole shell into the build.
+GNOME := $(shell dpkg-query --showformat='$${Version}' --show gnome-shell-common 2>/dev/null | cut -d. -f1)
+EXTENSION := debian/gnome-shell-extension-capit/usr/share/gnome-shell/extensions/capit@karazum.github.io
+
+# The Makefile's default target installs into the builder's home folder, so no build system runs on its own.
+%:
+	dh $@ --buildsystem=none
+
+override_dh_auto_build:
+	glib-compile-schemas --strict --dry-run extension/schemas
+
+override_dh_auto_test:
+ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
+	$(MAKE) test
+endif
+
+override_dh_auto_install:
+	$(MAKE) install-system DESTDIR=$(CURDIR)/debian/gnome-shell-extension-capit
+	@test -n "$(GNOME)" || { echo 'gnome-shell-common is not installed' >&2; exit 1; }
+	@grep -q '"shell-version": \[.*"$(GNOME)"' $(EXTENSION)/metadata.json || \
+		{ echo 'GNOME $(GNOME) is not among the shell versions in metadata.json' >&2; exit 1; }
+	sed -i 's/"shell-version": \[[^]]*\]/"shell-version": ["$(GNOME)"]/' $(EXTENSION)/metadata.json
+
+override_dh_gencontrol:
+	dh_gencontrol -- '-Vgnome-shell:Depends=gnome-shell (>= $(GNOME)~), gnome-shell (<< $(shell expr $(GNOME) + 1)~)'

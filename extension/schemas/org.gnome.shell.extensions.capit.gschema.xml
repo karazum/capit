@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<schemalist>
+  <schema id="org.gnome.shell.extensions.capit" path="/org/gnome/shell/extensions/capit/">
+    <key name="capture-shortcut" type="as">
+      <default>['&lt;Super&gt;&lt;Shift&gt;s']</default>
+      <summary>Capture shortcut</summary>
+    </key>
+    <key name="output-directory" type="s">
+      <default>''</default>
+      <summary>PNG destination; empty uses Pictures/CapIt</summary>
+    </key>
+    <key name="clipboard-content" type="s">
+      <choices>
+        <choice value="file"/>
+        <choice value="content"/>
+      </choices>
+      <default>'file'</default>
+      <summary>What copy and save puts on the clipboard</summary>
+      <description>Applies when a capture is both copied and saved; copy only always copies the content. file: a reference to the PNG, GIF or MP4 file, which chat applications, browsers and Files paste as an attachment. content: the image or video data itself, which image editors and some web pages paste directly.</description>
+    </key>
+    <key name="show-key-hints" type="b">
+      <default>true</default>
+      <summary>Show each toolbar button's keyboard shortcut on the button</summary>
+    </key>
+    <key name="timing-log" type="b">
+      <default>false</default>
+      <summary>Log how long each capture, export and recording stage takes</summary>
+      <description>Writes one line per stage to the system journal, for finding what is slow on a given machine. Read them with: journalctl --user -b -g 'CapIt timing'</description>
+    </key>
+    <key name="element-detection" type="s">
+      <choices>
+        <choice value="none"/>
+        <choice value="visual"/>
+        <choice value="accessibility"/>
+      </choices>
+      <default>'visual'</default>
+      <summary>How smart boxes find elements inside windows</summary>
+      <description>none: whole windows only. visual: panels between the straight dividers of the frozen image, and areas of flat background and what stands out from them, such as cards, fields, tabs and pictures. accessibility: elements the application reports through its accessibility tree.</description>
+    </key>
+    <key name="show-large-regions" type="b">
+      <default>false</default>
+      <summary>Outline a window's large regions while picking</summary>
+      <description>Draws the large panels that element detection finds in the window under the pointer in coloured dashes, each with a tab showing its size that selects it whole.</description>
+    </key>
+    <key name="quick-capture" type="b">
+      <default>false</default>
+      <summary>Copy and save a screenshot as soon as its region is picked, without annotating</summary>
+      <description>Clicking a smart box or a large region's tab, or finishing a drag, copies and saves the screenshot at once, as Enter would. The region cannot be adjusted or annotated first. Recordings still start with a click on the area or Enter.</description>
+    </key>
+    <key name="record-shortcut" type="as">
+      <default>['&lt;Super&gt;&lt;Shift&gt;g']</default>
+      <summary>Recording shortcut</summary>
+      <description>Opens the capture overlay in the recording mode used last; pressed during a recording, stops it and makes the file.</description>
+    </key>
+    <key name="recording-mode" type="s">
+      <choices>
+        <choice value="gif"/>
+        <choice value="video"/>
+      </choices>
+      <default>'gif'</default>
+      <summary>The recording mode the recording shortcut opens in, set by the last recording started</summary>
+    </key>
+    <key name="recording-output" type="s">
+      <choices>
+        <choice value="both"/>
+        <choice value="copy"/>
+        <choice value="save"/>
+      </choices>
+      <default>'both'</default>
+      <summary>Where a finished GIF or video goes</summary>
+      <description>both: saved in the output folder and copied to the clipboard. copy: clipboard only. save: output folder only.</description>
+    </key>
+    <key name="gif-fps" type="i">
+      <range min="1" max="50"/>
+      <default>15</default>
+      <summary>GIF frames per second</summary>
+    </key>
+    <key name="recording-show-cursor" type="b">
+      <default>true</default>
+      <summary>Draw the pointer into GIF and video recordings</summary>
+    </key>
+    <key name="recording-demo-cursor" type="b">
+      <default>false</default>
+      <summary>Highlight the pointer and its clicks in GIF and video recordings</summary>
+    </key>
+    <key name="gif-max-duration" type="i">
+      <range min="0" max="3600"/>
+      <default>60</default>
+      <summary>Longest GIF recording in seconds; 0 for no limit</summary>
+    </key>
+    <key name="gif-stats-mode" type="s">
+      <choices>
+        <choice value="full"/>
+        <choice value="diff"/>
+        <choice value="single"/>
+      </choices>
+      <default>'full'</default>
+      <summary>How FFmpeg's palettegen builds the GIF palette</summary>
+      <description>full: one palette from every pixel of the recording. diff: one palette weighted to what changes between frames, which suits a moving part on a still background. single: a new palette for each frame, larger files.</description>
+    </key>
+    <key name="gif-dither" type="s">
+      <choices>
+        <choice value="none"/>
+        <choice value="bayer"/>
+        <choice value="heckbert"/>
+        <choice value="floyd_steinberg"/>
+        <choice value="sierra2"/>
+        <choice value="sierra2_4a"/>
+        <choice value="sierra3"/>
+        <choice value="burkes"/>
+        <choice value="atkinson"/>
+      </choices>
+      <default>'sierra2_4a'</default>
+      <summary>FFmpeg paletteuse dithering</summary>
+    </key>
+    <key name="gif-bayer-scale" type="i">
+      <range min="0" max="5"/>
+      <default>2</default>
+      <summary>Bayer pattern scale, used only by bayer dithering; higher shows the pattern less</summary>
+    </key>
+    <key name="video-fps" type="i">
+      <range min="1" max="60"/>
+      <default>30</default>
+      <summary>Video frames per second</summary>
+    </key>
+    <key name="video-max-duration" type="i">
+      <range min="0" max="36000"/>
+      <default>0</default>
+      <summary>Longest video recording in seconds; 0 for no limit</summary>
+    </key>
+    <key name="video-crf" type="i">
+      <range min="0" max="51"/>
+      <default>28</default>
+      <summary>x264 constant rate factor; lower is better quality and larger files</summary>
+    </key>
+    <key name="video-preset" type="s">
+      <choices>
+        <choice value="ultrafast"/>
+        <choice value="superfast"/>
+        <choice value="veryfast"/>
+        <choice value="faster"/>
+        <choice value="fast"/>
+        <choice value="medium"/>
+        <choice value="slow"/>
+        <choice value="slower"/>
+        <choice value="veryslow"/>
+      </choices>
+      <default>'ultrafast'</default>
+      <summary>x264 preset; slower presets make smaller files at the same quality and take longer after stopping</summary>
+    </key>
+  </schema>
+</schemalist>
